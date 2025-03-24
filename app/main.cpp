@@ -7,6 +7,25 @@
 
 std::ofstream errorLog("err.log", std::ios::app);
 
+void deleteTableContents(PGconn* conn, const std::string& tableName) {
+    if (PQstatus(conn) != CONNECTION_OK) {
+        errorLog << "Connection to database failed: " << PQerrorMessage(conn) << '\n';
+        return;
+    }
+
+    std::string query = "DELETE FROM " + tableName + ";";
+
+    PGresult* res = PQexec(conn, query.c_str());
+
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorLog << "DELETE command failed: " << PQerrorMessage(conn) << '\n';
+    } else {
+        errorLog << "Contents of table '" << tableName << "' deleted successfully." << '\n';
+    }
+
+    PQclear(res);
+}
+
 std::string replaceBackslashes(const std::string& input) {
     std::regex backslashPattern("\\\\");
     return std::regex_replace(input, backslashPattern, "/");
@@ -105,21 +124,21 @@ void printSearchResults(PGconn* conn, const std::string& searchPhrase) {
 
     const char* query = R"(
     WITH full_text_search AS (
-        SELECT fc.*, f.name AS file_name
+        SELECT fc.*, f.name AS file_name, f.path AS file_path
         FROM search_engine.file_contents fc
         JOIN search_engine.files f ON fc.filesid = f.id
         WHERE fc.content_tsvector @@ phraseto_tsquery('english', $1)
     ),
     partial_word_match AS (
-        SELECT fc.*, f.name AS file_name
+        SELECT fc.*, f.name AS file_name, f.path AS file_path
         FROM search_engine.file_contents fc
         JOIN search_engine.files f ON fc.filesid = f.id
         WHERE fc.content LIKE '%' || $1 || '%'
     )
-    SELECT DISTINCT content, line_number, file_name
+    SELECT DISTINCT content, line_number, file_name, file_path
     FROM full_text_search
     UNION
-    SELECT DISTINCT content, line_number, file_name
+    SELECT DISTINCT content, line_number, file_name, file_path
     FROM partial_word_match;
     )";
 
@@ -176,7 +195,8 @@ int main() {
     printf("Menu:\n");
     printf(" 1 - Insert 1 file into DB\n");
     printf(" 2 - Insert Reccursevly into DB\n");
-    printf(" 3 - search from files\n");
+    printf(" 3 - delete files \n");
+    printf(" 4 - search from files\n");
     printf(" 0 - Exit\n\n");
 
 
@@ -187,13 +207,16 @@ int main() {
         {
             case 1:
                 std::cin>>path;
-                insertFileToDatabase(conn, path);
+                insertFileToDatabase(conn, replaceBackslashes(path));
                 break;
             case 2:
                 std::cin>>path;
                 insertRec(conn, path);
                 break;
             case 3:
+                deleteTableContents(conn, "search_engine.files");
+                break;
+            case 4:
                 std::string keyword;
                 while(keyword.empty())
                     getline(std::cin, keyword);
