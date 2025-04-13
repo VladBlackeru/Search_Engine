@@ -41,6 +41,23 @@ void searchWorker(const fs::path& rootDir, const std::string& query, std::vector
     }
 }
 
+void processAndDisplayResults(const std::string& query, std::vector<SearchResult>& allResults) {
+    std::sort(allResults.begin(), allResults.end(), [](const SearchResult& a, const SearchResult& b) {
+        return (a.filePath == b.filePath) ? (a.lineNumber < b.lineNumber) : (a.filePath < b.filePath);
+    });
+        resultCache[query] = allResults;
+
+    std::cout << "\nSearch results for: \"" << query << "\":\n";
+    if (allResults.empty()) {
+        std::cout << "Nothing found" << std::endl;
+    } else {
+        for (const auto& res : allResults) {
+            std::cout << "File: " << res.filePath << "\n"
+                      << "Line " << res.lineNumber << ": " << res.lineText << "\n"
+                      << "\n";
+        }
+    }
+}
 
 std::vector<fs::path> getPartitions(const fs::path& rootDir) {
     std::vector<fs::path> partitions;
