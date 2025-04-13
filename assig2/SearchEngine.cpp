@@ -4,6 +4,13 @@
 #include <fstream>
 
 std::unordered_map<std::string, std::vector<SearchResult>> resultCache;
+bool containsQuery(const std::string& text, const std::string& query) {
+    std::string lowText = text;
+    std::string lowQuery = query;
+    std::transform(lowText.begin(), lowText.end(), lowText.begin(), ::tolower);
+    std::transform(lowQuery.begin(), lowQuery.end(), lowQuery.begin(), ::tolower);
+    return (lowText.find(lowQuery) != std::string::npos);
+}
 
 void searchWorker(const fs::path& rootDir, const std::string& query, std::vector<SearchResult>& localResults) {
     try {
