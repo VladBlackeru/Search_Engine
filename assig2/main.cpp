@@ -4,6 +4,7 @@
 #include <thread>
 #include "SearchEngine.h"
 #include <filesystem>
+#define MAX_CACHE_SIZE 2048
 
 namespace fs = std::filesystem;
 
@@ -28,16 +29,17 @@ int main() {
         std::getline(std::cin, choice);
 
         if (choice == "1") {
+            if(resultCache.size() > MAX_CACHE_SIZE)
+                resultCache.clear();
             std::cout << "search query: ";
             std::string query;
             std::getline(std::cin, query);
 
-                if (resultCache.find(query) != resultCache.end()) {
-                    std::cout << "cache result found." << std::endl;
-                    processAndDisplayResults(query, resultCache[query]);
-                    continue;
-                }
-
+            if (resultCache.find(query) != resultCache.end()) {
+                std::cout << "cache result found." << std::endl;
+                processAndDisplayResults(query, resultCache[query]);
+                continue;
+            }
 
             std::vector<fs::path> partitions = getPartitions(rootPath);
             if (partitions.empty()) {
