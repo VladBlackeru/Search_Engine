@@ -42,4 +42,19 @@ void searchWorker(const fs::path& rootDir, const std::string& query, std::vector
 }
 
 
+std::vector<fs::path> getPartitions(const fs::path& rootDir) {
+    std::vector<fs::path> partitions;
+    try {
+        if (fs::exists(rootDir) && fs::is_directory(rootDir)) {
+            for (const auto& entry : fs::directory_iterator(rootDir)) {
+                if (entry.is_directory()) {
+                    partitions.push_back(entry.path());
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error partitioning " << rootDir << " : " << e.what() << std::endl;
+    }
+    return partitions;
+}
 
