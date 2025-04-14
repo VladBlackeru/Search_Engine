@@ -29,8 +29,6 @@ int main() {
         std::getline(std::cin, choice);
 
         if (choice == "1") {
-            if(resultCache.size() > MAX_CACHE_SIZE)
-                resultCache.clear();
             std::cout << "search query: ";
             std::string query;
             std::getline(std::cin, query);
@@ -41,10 +39,10 @@ int main() {
                 continue;
             }
 
+            if(resultCache.size() > MAX_CACHE_SIZE)
+                resultCache.clear();
+
             std::vector<fs::path> partitions = getPartitions(rootPath);
-            if (partitions.empty()) {
-                partitions.push_back(rootPath);
-            }
 
             std::vector<std::thread> threads;
             std::vector<std::vector<SearchResult>> localResults(partitions.size());
