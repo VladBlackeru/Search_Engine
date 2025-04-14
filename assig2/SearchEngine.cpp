@@ -43,7 +43,7 @@ void searchWorker(const fs::path& rootDir, const std::string& query, std::vector
 
 void processAndDisplayResults(const std::string& query, std::vector<SearchResult>& allResults) {
     std::sort(allResults.begin(), allResults.end(), [](const SearchResult& a, const SearchResult& b) {
-        return (a.filePath == b.filePath) ? (a.lineNumber < b.lineNumber) : (a.filePath < b.filePath);
+        return (a.filePath == b.filePath) ? (a.lineNumber < b.lineNumber) : (a.filePath.size() < b.filePath.size());
     });
         resultCache[query] = allResults;
 
@@ -54,7 +54,7 @@ void processAndDisplayResults(const std::string& query, std::vector<SearchResult
         for (const auto& res : allResults) {
             std::cout << "File: " << res.filePath << "\n"
                       << "Line " << res.lineNumber << ": " << res.lineText << "\n"
-                      << "\n";
+                      << "----------------------------------------\n";
         }
     }
 }
