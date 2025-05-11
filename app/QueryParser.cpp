@@ -1,4 +1,5 @@
 #include "QueryParser.h"
+#include "Utils.h"
 #include <sstream>
 #include <algorithm>
 
@@ -13,6 +14,7 @@ QueryTerms QueryParser::parse(const std::string &query) {
             std::string value = token.substr(pos + 1);
             std::transform(qualifier.begin(), qualifier.end(), qualifier.begin(), ::tolower);
             if (qualifier == "path") {
+                value= replaceBackslashes(value);
                 terms.pathTerms.push_back(value);
             } else if (qualifier == "content") {
                 terms.contentTerms.push_back(value);

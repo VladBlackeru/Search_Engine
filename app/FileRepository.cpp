@@ -202,31 +202,46 @@ void FileRepository::searchFilesAdvanced(const std::string &queryStr) {
     notifySearchObservers(queryStr);
 
     QueryTerms terms = QueryParser::parse(queryStr);
-    std::string sql =
-            "SELECT DISTINCT fc.content, fc.line_number, f.name AS file_name, f.path AS file_path, f.size, f.extension "
-            "FROM search_engine.file_contents fc "
-            "JOIN search_engine.files f ON fc.filesid = f.id WHERE 1=1";
 
-    std::vector<std::string> paramStrings;
-
-    for (const auto &term : terms.contentTerms) {
-        std::cout<<term<<" ";
-        sql += " AND fc.content ILIKE '%' || $" + std::to_string(paramStrings.size() + 1) + " || '%'";
-        paramStrings.push_back(term);
+    const char* query = R"(
+WITH full_text_search AS (
+    SELECT fc.content, fc.line_number,
+           f.name AS file_name, f.path AS file_path,
+           f.size, f.extension
+    FROM search_engine.file_contents fc
+    JOIN search_engine.files f ON fc.filesid = f.id
+    WHERE fc.content_tsvector @@ phraseto_tsquery('english', $1)
+      AND f.path LIKE '%' || $2 || '%'
+),
+partial_word_match AS (
+    SELECT fc.content, fc.line_number,
+           f.name AS file_name, f.path AS file_path,
+           f.size, f.extension
+    FROM search_engine.file_contents fc
+    JOIN search_engine.files f ON fc.filesid = f.id
+    WHERE fc.content LIKE '%' || $1 || '%'
+      AND f.path LIKE '%' || $2 || '%'
+)
+SELECT DISTINCT content, line_number, file_name, file_path, size, extension
+FROM full_text_search
+UNION
+SELECT DISTINCT content, line_number, file_name, file_path, size, extension
+FROM partial_word_match;
+)";
+    std::string contents="";
+    for(auto s: terms.contentTerms){
+        contents += s;
+        contents += " ";
     }
+    contents.pop_back();
+    std::cout<<contents;
+    const char* paramValues[2] = {
+            contents.c_str(),
+            terms.pathTerms[0].c_str()
+    };
 
-    for (const auto &term : terms.pathTerms) {
-        std::cout<<term<<'\n';
-        sql += " AND f.path ILIKE '%' || $" + std::to_string(paramStrings.size() + 1) + " || '%'";
-        paramStrings.push_back(term);
-    }
+    PGresult* res = db.executeParameterizedQuery(query, 2, paramValues);
 
-    std::vector<const char*> paramValues;
-    for (auto &s : paramStrings) {
-        paramValues.push_back(s.c_str());
-    }
-
-    PGresult* res = db.executeParameterizedQuery(sql, static_cast<int>(paramValues.size()), paramValues.data());
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
         std::cerr << "Advanced search query failed: "
                   << PQerrorMessage(db.getConnection()) << std::endl;
@@ -234,16 +249,17 @@ void FileRepository::searchFilesAdvanced(const std::string &queryStr) {
         return;
     }
 
-    std::vector<SearchResult> results;
     int nRows = PQntuples(res);
+
+    std::vector<SearchResult> results;
     for (int i = 0; i < nRows; ++i) {
         SearchResult result;
-        result.content       = PQgetvalue(res, i, PQfnumber(res, "content"));
-        result.line_number   = std::stoi(PQgetvalue(res, i, PQfnumber(res, "line_number")));
-        result.file_name     = PQgetvalue(res, i, PQfnumber(res, "file_name"));
-        result.file_path     = PQgetvalue(res, i, PQfnumber(res, "file_path"));
-        result.file_size     = std::stol(PQgetvalue(res, i, PQfnumber(res, "size")));
-        result.file_extension= PQgetvalue(res, i, PQfnumber(res, "extension"));
+        result.content        = PQgetvalue(res, i, PQfnumber(res, "content"));
+        result.line_number    = std::stoi(PQgetvalue(res, i, PQfnumber(res, "line_number")));
+        result.file_name      = PQgetvalue(res, i, PQfnumber(res, "file_name"));
+        result.file_path      = PQgetvalue(res, i, PQfnumber(res, "file_path"));
+        result.file_size      = std::stol(PQgetvalue(res, i, PQfnumber(res, "size")));
+        result.file_extension = PQgetvalue(res, i, PQfnumber(res, "extension"));
 
         result.score = Ranking::computeScore(result, terms);
 
