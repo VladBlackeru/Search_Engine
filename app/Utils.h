@@ -6,9 +6,11 @@
 #define APP_UTILS_H
 
 
-class Utils {
+#include <string>
 
-};
+// Replaces all backslashes ('\') with forward slashes ('/').
+std::string replaceBackslashes(const std::string& input);
+
 
 
 #endif //APP_UTILS_H

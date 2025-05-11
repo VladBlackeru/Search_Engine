@@ -3,3 +3,9 @@
 //
 
 #include "Utils.h"
+#include <regex>
+
+std::string replaceBackslashes(const std::string& input) {
+    std::regex backslashPattern("\\\\");
+    return std::regex_replace(input, backslashPattern, "/");
+}
