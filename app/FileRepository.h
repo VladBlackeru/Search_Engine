@@ -1,16 +1,10 @@
-//
-// Created by Vlod on 05/11/2025.
-//
-
 #ifndef APP_FILEREPOSITORY_H
 #define APP_FILEREPOSITORY_H
 
-
-#ifndef FILEREPOSITORY_H
-#define FILEREPOSITORY_H
-
 #include "Database.h"
+#include "SearchObserver.h"
 #include <string>
+#include <vector>
 
 class FileRepository {
 public:
@@ -26,11 +20,17 @@ public:
 
     void insertRecursively(const std::string& directoryPath);
 
+    void searchFilesAdvanced(const std::string& queryStr);
+
+    void registerSearchObserver(SearchObserver* observer);
+    void removeSearchObserver(SearchObserver* observer);
+
 private:
     Database& db;
+    std::vector<SearchObserver*> observers;
+
+    void notifySearchObservers(const std::string& query);
+
 };
-
-#endif // FILEREPOSITORY_H
-
 
 #endif //APP_FILEREPOSITORY_H

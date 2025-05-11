@@ -1,10 +1,13 @@
 #include "FileRepository.h"
+#include "QueryParser.h"
+#include "Ranking.h"
 #include "Utils.h"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
 #include <libpq-fe.h>
 #include <string>
+#include <algorithm>
 
 bool FileRepository::deleteFileByPath(const std::string &filePath) {
     if (!db.isConnected()) {
@@ -186,5 +189,92 @@ void FileRepository::insertRecursively(const std::string &directoryPath) {
         }
     } catch (const std::exception& e) {
         std::cerr << "Error while traversing directory: " << e.what() << std::endl;
+    }
+}
+
+void FileRepository::searchFilesAdvanced(const std::string &queryStr) {
+    if (!db.isConnected()) {
+        std::cerr << "Database connection is not valid: "
+                  << PQerrorMessage(db.getConnection()) << std::endl;
+        return;
+    }
+
+    notifySearchObservers(queryStr);
+
+    QueryTerms terms = QueryParser::parse(queryStr);
+    std::string sql =
+            "SELECT DISTINCT fc.content, fc.line_number, f.name AS file_name, f.path AS file_path, f.size, f.extension "
+            "FROM search_engine.file_contents fc "
+            "JOIN search_engine.files f ON fc.filesid = f.id WHERE 1=1";
+
+    std::vector<std::string> paramStrings;
+
+    for (const auto &term : terms.contentTerms) {
+        std::cout<<term<<" ";
+        sql += " AND fc.content ILIKE '%' || $" + std::to_string(paramStrings.size() + 1) + " || '%'";
+        paramStrings.push_back(term);
+    }
+
+    for (const auto &term : terms.pathTerms) {
+        std::cout<<term<<'\n';
+        sql += " AND f.path ILIKE '%' || $" + std::to_string(paramStrings.size() + 1) + " || '%'";
+        paramStrings.push_back(term);
+    }
+
+    std::vector<const char*> paramValues;
+    for (auto &s : paramStrings) {
+        paramValues.push_back(s.c_str());
+    }
+
+    PGresult* res = db.executeParameterizedQuery(sql, static_cast<int>(paramValues.size()), paramValues.data());
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        std::cerr << "Advanced search query failed: "
+                  << PQerrorMessage(db.getConnection()) << std::endl;
+        PQclear(res);
+        return;
+    }
+
+    std::vector<SearchResult> results;
+    int nRows = PQntuples(res);
+    for (int i = 0; i < nRows; ++i) {
+        SearchResult result;
+        result.content       = PQgetvalue(res, i, PQfnumber(res, "content"));
+        result.line_number   = std::stoi(PQgetvalue(res, i, PQfnumber(res, "line_number")));
+        result.file_name     = PQgetvalue(res, i, PQfnumber(res, "file_name"));
+        result.file_path     = PQgetvalue(res, i, PQfnumber(res, "file_path"));
+        result.file_size     = std::stol(PQgetvalue(res, i, PQfnumber(res, "size")));
+        result.file_extension= PQgetvalue(res, i, PQfnumber(res, "extension"));
+
+        result.score = Ranking::computeScore(result, terms);
+
+        results.push_back(result);
+    }
+    PQclear(res);
+
+    std::sort(results.begin(), results.end(), [](const SearchResult &a, const SearchResult &b) {
+        return a.score > b.score;
+    });
+
+    std::cout << "Advanced Search results for query: '" << queryStr << "'\n";
+    for (const auto &r : results) {
+        std::cout << "Score: " << r.score << " | File: " << r.file_name
+                  << " | Path: " << r.file_path
+                  << " | Line: " << r.line_number << "\nContent: " << r.content
+                  << "\n-------------------------------------\n";
+    }
+}
+
+
+void FileRepository::registerSearchObserver(SearchObserver* observer) {
+    observers.push_back(observer);
+}
+
+void FileRepository::removeSearchObserver(SearchObserver* observer) {
+    observers.erase(std::remove(observers.begin(), observers.end(), observer), observers.end());
+}
+
+void FileRepository::notifySearchObservers(const std::string& query) {
+    for (auto observer : observers) {
+        observer->update(query);
     }
 }
