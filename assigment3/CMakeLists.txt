@@ -15,4 +15,6 @@ add_executable(assigment3 main.cpp
         CommandHandlers.cpp
         CommandHandlers.h
         Event.cpp
-        Event.h)
+        Event.h
+        EventStore.cpp
+        EventStore.h)
