@@ -1,0 +1,3 @@
+C:/Users/Vlod/Desktop/Search-Engine/assigment3/cmake-build-debug/CMakeFiles/assigment3.dir
+C:/Users/Vlod/Desktop/Search-Engine/assigment3/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/Vlod/Desktop/Search-Engine/assigment3/cmake-build-debug/CMakeFiles/rebuild_cache.dir

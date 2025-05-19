@@ -1,0 +1,8 @@
+# ninja log v5
+10	662	7693428498914080	CMakeFiles/assigment3.dir/Event.cpp.obj	2039282ccef72054
+16	838	7693428500712833	CMakeFiles/assigment3.dir/EventStore.cpp.obj	b6637373412f5c21
+3	1213	7693428504452683	CMakeFiles/assigment3.dir/main.cpp.obj	949a83c09422f0cc
+38	1238	7693428504703751	CMakeFiles/assigment3.dir/CommandHandlers.cpp.obj	e8a0717151dfc496
+30	1248	7693428504799022	CMakeFiles/assigment3.dir/AccountManager.cpp.obj	9783b3061975c9d3
+23	1323	7693428505565458	CMakeFiles/assigment3.dir/OrderBook.cpp.obj	59df8a26de5a7e5f
+1324	1585	7693428508135047	assigment3.exe	5db4ec9c47ccce80
