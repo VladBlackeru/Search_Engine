@@ -13,4 +13,6 @@ add_executable(assigment3 main.cpp
         AccountManager.cpp
         AccountManager.h
         CommandHandlers.cpp
-        CommandHandlers.h)
+        CommandHandlers.h
+        Event.cpp
+        Event.h)
