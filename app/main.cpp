@@ -2,6 +2,7 @@
 #include "FileRepository.h"
 #include "Utils.h"
 #include "SearchHistory.h"
+#include "WidgetManager.h"
 #include <iostream>
 #include <string>
 #include <limits>
@@ -57,6 +58,7 @@ int main() {
                 std::string keyword;
                 std::cout << "Enter search keyword: ";
                 std::getline(std::cin, keyword);
+                WidgetManager::getInstance().displayRelevantWidget(keyword);
                 repository.searchFiles(keyword);
                 break;
             }

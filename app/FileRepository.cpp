@@ -2,6 +2,7 @@
 #include "QueryParser.h"
 #include "Ranking.h"
 #include "Utils.h"
+#include "WidgetManager.h"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -239,7 +240,7 @@ FROM partial_word_match;
             contents.c_str(),
             terms.pathTerms[0].c_str()
     };
-
+    WidgetManager::getInstance().displayRelevantWidget(contents.c_str());
     PGresult* res = db.executeParameterizedQuery(query, 2, paramValues);
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
