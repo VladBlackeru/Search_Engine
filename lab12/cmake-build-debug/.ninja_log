@@ -1,0 +1,11 @@
+# ninja log v5
+7	983	7693617404079704	CMakeFiles/lab12.dir/main.cpp.obj	2320ed6ce79854d6
+74	1148	7693612870378002	CMakeFiles/lab12.dir/Observer.cpp.obj	342ebe61e086b9ab
+1067	1274	7693617406932070	lab12.exe	c8b5fffb13ec3558
+3	348	7693619064967548	build.ninja	e11def7386c48b2d
+24	530	7693617399525572	CMakeFiles/lab12.dir/Strategy.cpp.obj	35802e6ce0d404b7
+13	774	7693617401992290	CMakeFiles/lab12.dir/Camera.cpp.obj	2cd03d64552188f7
+30	868	7693617402919550	CMakeFiles/lab12.dir/Projector.cpp.obj	67a2c36fd0ec6d22
+19	1067	7693617404918791	CMakeFiles/lab12.dir/Command.cpp.obj	3e794bfa4ee9fadb
+7	689	7693619119542637	CMakeFiles/lab12.dir/main.cpp.obj	2320ed6ce79854d6
+690	892	7693619121510793	lab12.exe	c8b5fffb13ec3558
