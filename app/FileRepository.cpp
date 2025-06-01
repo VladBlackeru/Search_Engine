@@ -3,6 +3,7 @@
 #include "Ranking.h"
 #include "Utils.h"
 #include "WidgetManager.h"
+#include "SearchCache.h"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -241,33 +242,42 @@ FROM partial_word_match;
             terms.pathTerms[0].c_str()
     };
     WidgetManager::getInstance().displayRelevantWidget(contents.c_str());
-    PGresult* res = db.executeParameterizedQuery(query, 2, paramValues);
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        std::cerr << "Advanced search query failed: "
-                  << PQerrorMessage(db.getConnection()) << std::endl;
-        PQclear(res);
-        return;
-    }
-
-    int nRows = PQntuples(res);
-
+    SearchCache& cache = SearchCache::getInstance();
     std::vector<SearchResult> results;
-    for (int i = 0; i < nRows; ++i) {
-        SearchResult result;
-        result.content        = PQgetvalue(res, i, PQfnumber(res, "content"));
-        result.line_number    = std::stoi(PQgetvalue(res, i, PQfnumber(res, "line_number")));
-        result.file_name      = PQgetvalue(res, i, PQfnumber(res, "file_name"));
-        result.file_path      = PQgetvalue(res, i, PQfnumber(res, "file_path"));
-        result.file_size      = std::stol(PQgetvalue(res, i, PQfnumber(res, "size")));
-        result.file_extension = PQgetvalue(res, i, PQfnumber(res, "extension"));
 
-        result.score = Ranking::computeScore(result, terms);
-
-        results.push_back(result);
+    if (cache.hasCachedResult(contents)) {
+        std::cout << "Cache hit! Using stored search results.\n";
+        results = cache.getCachedResult(contents);
+        results = cache.getCachedResult(contents);
+        results = cache.getCachedResult(contents);
     }
-    PQclear(res);
+    else {
+        PGresult *res = db.executeParameterizedQuery(query, 2, paramValues);
 
+        if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+            std::cerr << "Advanced search query failed: "
+                      << PQerrorMessage(db.getConnection()) << std::endl;
+            PQclear(res);
+            return;
+        }
+
+        int nRows = PQntuples(res);
+
+        for (int i = 0; i < nRows; ++i) {
+            SearchResult result;
+            result.content = PQgetvalue(res, i, PQfnumber(res, "content"));
+            result.line_number = std::stoi(PQgetvalue(res, i, PQfnumber(res, "line_number")));
+            result.file_name = PQgetvalue(res, i, PQfnumber(res, "file_name"));
+            result.file_path = PQgetvalue(res, i, PQfnumber(res, "file_path"));
+            result.file_size = std::stol(PQgetvalue(res, i, PQfnumber(res, "size")));
+            result.file_extension = PQgetvalue(res, i, PQfnumber(res, "extension"));
+
+            result.score = Ranking::computeScore(result, terms);
+            results.push_back(result);
+        }
+        cache.storeResult(contents, results);
+        PQclear(res);
+    }
     std::sort(results.begin(), results.end(), [](const SearchResult &a, const SearchResult &b) {
         return a.score > b.score;
     });
