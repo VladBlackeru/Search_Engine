@@ -17,7 +17,7 @@ private:
     SearchCache(const SearchCache&) = delete; // Delete copy constructor
     SearchCache& operator=(const SearchCache&) = delete; // Delete assignment operator
 
-    int size_of_cache;
+    int cache_size;
     std::map<std::string, std::vector<SearchResult>> cache;
 };
 

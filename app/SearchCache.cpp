@@ -1,7 +1,7 @@
 #include "SearchCache.h"
-
+#include "Utils.h"
 SearchCache::SearchCache() {
-    size_of_cache = 0;
+    cache_size = 0;
 }
 
 SearchCache& SearchCache::getInstance() {
@@ -14,6 +14,18 @@ bool SearchCache::hasCachedResult(const std::string& query) {
 }
 
 void SearchCache::storeResult(const std::string& query, const std::vector<SearchResult>& results) {
+    if(cache_size > MAX_CACHE_SIZE)
+        cache.clear();
+    int size = 0;
+    for(auto res: results)
+        size += sizeof(res);
+    if(size > MAX_CACHE_SIZE)
+        return;
+    if(size + cache_size > MAX_CACHE_SIZE){
+        cache.clear();
+        cache_size = 0;
+    }
+    cache_size += size;
     cache[query] = results;
 }
 

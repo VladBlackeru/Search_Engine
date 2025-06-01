@@ -7,6 +7,7 @@
 
 
 #include <string>
+#define MAX_CACHE_SIZE 1024 // 1 kbyte
 
 // Replaces all backslashes ('\') with forward slashes ('/').
 std::string replaceBackslashes(const std::string& input);
